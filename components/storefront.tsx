@@ -6,7 +6,9 @@ import { usePathname } from 'next/navigation'
 import { Search, UserRound, Heart, ShoppingBag, Menu, X, ChevronDown, ArrowRight, Plus, Minus, Trash2, MessageCircle, Star, ShieldCheck, Truck, RefreshCw, Filter } from 'lucide-react'
 import { SignupModal } from './signup-modal'
 
-export type Product = { id: number; name: string; category: string; price: number; oldPrice?: number; badge?: string; image: string; position?: string }
+import { checkoutAction } from '@/app/actions'
+
+export type Product = { id: number; variantId?: string; name: string; category: string; price: number; oldPrice?: number; badge?: string; image: string; position?: string }
 
 const categories = ['New Arrivals', 'Men', 'Women', 'Activewear', 'T-Shirts', 'Anime', 'Car Culture', 'Graphic Tees', 'Trousers', 'Polo Shirts', 'Chino Shorts']
 const baseProducts: Product[] = [
@@ -148,7 +150,27 @@ function ProductView({ product, add }: { product: Product; add: (p: Product) => 
 </div>
 </div></main> }
 
-function CartView({ cart, setCart, close }: { cart: Product[]; setCart: (p: Product[]) => void; close?: () => void }) { const total = cart.reduce((a, p) => a + p.price, 0); return <main className="cart-page"><div className="cart-heading"><p className="eyebrow">YOUR BAG</p><h1>{cart.length ? `${cart.length} ITEMS` : 'YOUR BAG IS EMPTY'}</h1></div>{cart.length ? <><div className="cart-items">{cart.map((p, i) => <div className="cart-item" key={`${p.id}-${i}`}><div className="cart-thumb" style={{ backgroundImage: `url(${p.image})`, backgroundPosition: p.position || 'center' }} /><div><h3>{p.name}</h3><p>{p.category}</p><strong>{formatPrice(p.price)}</strong></div><button aria-label={`Remove ${p.name}`} onClick={() => setCart(cart.filter((_, x) => x !== i))}><Trash2 size={17} /></button></div>)}</div><div className="cart-summary"><span>SUBTOTAL</span><strong>{formatPrice(total)}</strong><button className="button">CHECKOUT <ArrowRight size={16} /></button></div></> : <Link className="button" href="/collections/new-arrivals" onClick={close}>SHOP NEW ARRIVALS <ArrowRight size={16} /></Link>}</main> }
+function CartView({ cart, setCart, close }: { cart: Product[]; setCart: (p: Product[]) => void; close?: () => void }) {
+  const [loading, setLoading] = useState(false)
+  const total = cart.reduce((a, p) => a + p.price, 0)
+
+  const handleCheckout = async () => {
+    try {
+      setLoading(true)
+      const variantIds = cart.map((p) => p.variantId).filter(Boolean) as string[]
+      if (variantIds.length === 0) return alert('No valid Shopify variants in cart! Make sure you are adding real Shopify products.')
+      const url = await checkoutAction(variantIds)
+      if (url) window.location.href = url
+    } catch (e: any) {
+      console.error(e)
+      alert(e.message || 'Checkout failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return <main className="cart-page"><div className="cart-heading"><p className="eyebrow">YOUR BAG</p><h1>{cart.length ? `${cart.length} ITEMS` : 'YOUR BAG IS EMPTY'}</h1></div>{cart.length ? <><div className="cart-items">{cart.map((p, i) => <div className="cart-item" key={`${p.id}-${i}`}><div className="cart-thumb" style={{ backgroundImage: `url(${p.image})`, backgroundPosition: p.position || 'center' }} /><div><h3>{p.name}</h3><p>{p.category}</p><strong>{formatPrice(p.price)}</strong></div><button aria-label={`Remove ${p.name}`} onClick={() => setCart(cart.filter((_, x) => x !== i))}><Trash2 size={17} /></button></div>)}</div><div className="cart-summary"><span>SUBTOTAL</span><strong>{formatPrice(total)}</strong><button onClick={handleCheckout} disabled={loading} className="button">{loading ? 'LOADING...' : <>CHECKOUT <ArrowRight size={16} /></>}</button></div></> : <Link className="button" href="/collections/new-arrivals" onClick={close}>SHOP NEW ARRIVALS <ArrowRight size={16} /></Link>}</main>
+}
 function Login() { return <main className="login-page"><div><p className="eyebrow">WELCOME BACK</p><h1>YOUR ACCOUNT.</h1><p>Log in to manage your orders and save your favorite drops.</p><form onSubmit={e => { e.preventDefault(); alert('Login submitted') }}><label>Email address<input required type="email" /></label><label>Password<input required type="password" /></label><button className="button">LOG IN <ArrowRight size={16} /></button></form><Link href="/account/register">Create an account</Link></div></main> }
 
 export { products }
