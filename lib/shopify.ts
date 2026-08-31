@@ -69,7 +69,9 @@ export async function getProducts() {
             variants(first: 1) {
               edges {
                 node {
-                  price
+                  price {
+                    amount
+                  }
                 }
               }
             }
@@ -94,7 +96,7 @@ export async function getProducts() {
       id: node.id,
       name: node.title,
       category: node.productType || "General",
-      price: parseFloat(node.variants?.edges[0]?.node?.price || "0"),
+      price: parseFloat(node.variants?.edges[0]?.node?.price?.amount || "0"),
       image: node.images?.edges[0]?.node?.url || "/dudesdrop-products.png",
       badge: index === 0 ? "NEW" : undefined,
     };
