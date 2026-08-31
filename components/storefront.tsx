@@ -23,7 +23,7 @@ const baseProducts: Product[] = [
 ]
 const products = [...baseProducts, ...Array.from({ length: 63 }, (_, i) => ({ ...baseProducts[i % baseProducts.length], id: i + 9, name: `${baseProducts[i % baseProducts.length].name} ${Math.floor(i / 8) + 2}` }))]
 
-function formatPrice(n: number) { return `$${n.toFixed(2)}` }
+function formatPrice(n: number) { return `Rs ${n.toLocaleString()}` }
 
 function ProductCard({ product, onWish }: { product: Product; onWish: (id: number) => void }) {
   const [wished, setWished] = useState(false)
