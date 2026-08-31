@@ -69,6 +69,7 @@ export async function getProducts() {
             variants(first: 1) {
               edges {
                 node {
+                  id
                   price {
                     amount
                   }
@@ -90,10 +91,10 @@ export async function getProducts() {
 
   const data = await shopifyFetch({ query });
   
-  // Format the Shopify Admin API data to match the shape of the products your frontend expects
   return data.products.edges.map(({ node }: any, index: number) => {
     return {
       id: node.id,
+      variantId: node.variants?.edges[0]?.node?.id,
       name: node.title,
       category: node.productType || "General",
       price: parseFloat(node.variants?.edges[0]?.node?.price?.amount || "0"),
@@ -101,4 +102,33 @@ export async function getProducts() {
       badge: index === 0 ? "NEW" : undefined,
     };
   });
+}
+
+export async function createCart(variantIds: string[]) {
+  const query = `
+    mutation cartCreate($input: CartInput!) {
+      cartCreate(input: $input) {
+        cart {
+          checkoutUrl
+        }
+        userErrors {
+          message
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      lines: variantIds.map(id => ({ merchandiseId: id, quantity: 1 }))
+    }
+  };
+
+  const data = await shopifyFetch({ query, variables });
+  
+  if (data?.cartCreate?.userErrors?.length > 0) {
+    throw new Error(data.cartCreate.userErrors[0].message);
+  }
+
+  return data?.cartCreate?.cart?.checkoutUrl;
 }
