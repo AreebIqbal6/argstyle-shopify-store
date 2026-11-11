@@ -1,0 +1,21 @@
+name: Keep Alive Store & Supabase
+
+on:
+  schedule:
+    # Runs every 12 hours (at 06:00 and 18:00 UTC) to keep sites warm and active
+    - cron: '0 6,18 * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Warm Up ARG Style Storefront
+        run: |
+          echo "Pinging ARG Style keep-alive..."
+          curl -s -I "https://argstyle.vercel.app/api/keep-alive" || curl -s -I "https://argstyle.vercel.app" || true
+
+      - name: Warm Up ARG Registrars & Supabase
+        run: |
+          echo "Pinging ARG Registrars..."
+          curl -s -I "https://www.argregistrars.com/api/keep-alive" || true
